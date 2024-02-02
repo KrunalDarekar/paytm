@@ -105,6 +105,7 @@ router.put("/", authMiddleware, async (req, res) => {
 
 router.get("/bulk", authMiddleware, async(req,res) => {
     const filter = req.query.filter || ""
+    console.log(filter)
 
     const filteredUsers = await User.find({
         $or: [{

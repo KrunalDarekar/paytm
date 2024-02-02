@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSetRecoilState } from "recoil";
 import { currUserAtom} from "../state/atoms/currUser"
 import { useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ const Users = ({users, setFilter}) => {
         <div className="text-lg font-bold flex flex-col px-6">
             <p>Users</p>
             <input onChange={(e) => { 
+                console.log(`from input ${e.target.value}`)
                 setFilter(e.target.value)
                 setSearchText(e.target.value)}} type="text" placeholder="Search users..." className="border border-gray-400 text-base font-normal rounded py-1 px-2 mt-1 mb-4"/>
             <div>
