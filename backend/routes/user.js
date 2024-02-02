@@ -1,6 +1,6 @@
 // backend/routes/user.js
 const express = require('express');
-const { User } = require('../db');
+const { User, Account } = require('../db');
 const zod = require("zod")
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = require('../config');
@@ -10,7 +10,7 @@ const signupBody = zod.object({
     username: zod.string().email(),
     firstName: zod.string(),
     lastName: zod.string(),
-    password: zod.string().min(5)
+    password: zod.string().min(6)
 })
 
 const router = express.Router();
@@ -30,16 +30,21 @@ router.post("/signup", async(req,res) => {
         })
     }
 
-    const user = new User({
+    const user = await User({
         username: req.body.username,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         password: req.body.password,
     })
-    
-    await user.save();
+    await user.save()
 
     const userId = user._id;
+
+    await Account.create({
+        userId,
+        balance: Math.floor(Math.random() * 10000) + 1
+    })
+
     const token = jwt.sign({ userId }, JWT_SECRET);
 
     res.status(200).json({
@@ -51,7 +56,7 @@ router.post("/signup", async(req,res) => {
 
 const signinBody = zod.object({
     username: zod.string().email(),
-    password: zod.string().min(5)
+    password: zod.string().min(6)
 })
 
 router.post("/signin", async(req,res) => {
@@ -98,9 +103,8 @@ router.put("/", authMiddleware, async (req, res) => {
     })
 })
 
-router.get("/bulk", async(req,res) => {
+router.get("/bulk", authMiddleware, async(req,res) => {
     const filter = req.query.filter || ""
-    console.log(filter)
 
     const filteredUsers = await User.find({
         $or: [{
@@ -114,14 +118,15 @@ router.get("/bulk", async(req,res) => {
         }]
     })
 
-    const formattedUsers = filteredUsers.map( user => {
-        return { 
-            firstName : user.firstName, 
-            lastName : user.lastName,
-            _id : user._id
+    const formattedUsers = filteredUsers.filter(user => user._id.toString() !== req.userId.toString())
+    .map( user => {
+            return { 
+                firstName : user.firstName, 
+                lastName : user.lastName,
+                _id : user._id
+            }
         }
-    })
-    console.log(formattedUsers)
+    )
 
     res.json({
         users: formattedUsers
